@@ -17,7 +17,7 @@ Rather than generic AI responses, the backend utilizes heavily engineered system
 - **Advanced Prompt Engineering**: Avoids the "Garbage In, Garbage Out" (GIGO) trap by feeding the Gemini model rich context, core beliefs, and constraint guidelines.
 
 ## 🚀 Live Deployment
-**Live App URL:** [[Insert Live URL Here](https://persona-three-psi.vercel.app/)] 
+**Live App URL:** [[LIVE DEPLOYMENT LINK](https://persona-three-psi.vercel.app/)] 
 
 ---
 
