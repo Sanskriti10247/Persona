@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Ears -->
+  <polygon fill="#FFF" stroke="#000" stroke-width="3" points="15,40 5,5 40,20"/>
+  <polygon fill="#FFF" stroke="#000" stroke-width="3" points="85,40 95,5 60,20"/>
+  <!-- Head -->
+  <ellipse fill="#FFF" stroke="#000" stroke-width="3" cx="50" cy="55" rx="45" ry="35"/>
+  <!-- Bow -->
+  <path fill="#FF69B4" stroke="#000" stroke-width="2" d="M85 30c0 5-2 10-8 10s-12-5-12-12 8-12 12-12 8 5 8 14zm-15-2c0 5-2 10-8 10s-12-5-12-12 8-12 12-12 8 5 8 14z"/>
+  <circle fill="#FF1493" stroke="#000" stroke-width="2" cx="70" cy="28" r="6"/>
+  <!-- Eyes -->
+  <ellipse fill="#000" cx="28" cy="55" rx="4" ry="6"/>
+  <ellipse fill="#000" cx="72" cy="55" rx="4" ry="6"/>
+  <!-- Nose -->
+  <ellipse fill="#FFD700" stroke="#000" stroke-width="1.5" cx="50" cy="65" rx="6" ry="4"/>
+  <!-- Whiskers -->
+  <path stroke="#000" stroke-width="2.5" stroke-linecap="round" d="M8 45h16M4 55h18M8 65h16M92 45H76M96 55H78M92 65H76"/>
+</svg>

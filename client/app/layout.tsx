@@ -1,23 +1,23 @@
 import type { Metadata } from "next";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Quicksand, Nunito } from "next/font/google";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const quicksand = Quicksand({
+  variable: "--font-quicksand",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const nunito = Nunito({
+  variable: "--font-nunito",
   subsets: ["latin"],
 });
 
 const globalStyles = readFileSync(path.join(process.cwd(), "app", "globals.css"), "utf8");
 
 export const metadata: Metadata = {
-  title: "Personafy",
-  description: "A polished persona chat experience with separate history for every character.",
+  title: "Personafy 🎀",
+  description: "A refined persona chat experience.",
 };
 
 export default function RootLayout({
@@ -28,7 +28,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${quicksand.variable} ${nunito.variable} h-full antialiased`}
     >
       <body className="min-h-full">
         <style dangerouslySetInnerHTML={{ __html: globalStyles }} />

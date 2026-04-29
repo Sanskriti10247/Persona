@@ -26,7 +26,7 @@ export default async function PersonaPage({ params }: Props) {
       <div className="persona-page-inner">
         <div className="persona-topbar">
           <Link href="/" className="back-link">
-            ← Back
+            ← Back to Voices
           </Link>
           <div className="persona-topbar-copy">
             <span className="eyebrow">Channel</span>
@@ -35,6 +35,7 @@ export default async function PersonaPage({ params }: Props) {
         </div>
 
         <section className="persona-intro glass-card" style={{ ["--accent" as string]: persona.accent, ["--glow" as string]: persona.glow }}>
+          <img src="/hello-kitty-bow.svg" alt="" className="floating-decor decor-one" style={{ width: '40px' }} />
           <div className="persona-intro-copy">
             <p className="eyebrow">Session</p>
             <h1>{persona.tagline}</h1>

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
 import { personaMap, type PersonaId, type PersonaProfile } from "../lib/personas";
 
 type Message = {
@@ -73,19 +74,16 @@ function TypewriterMessage({ text, isFinal, isNew }: { text: string; isFinal: bo
     
     if (displayedText.length === text.length) return;
     
-    // Determine how many chars to add to catch up
     const charDiff = text.length - displayedText.length;
     
-    // We let it animate the whole text over time, catching up slightly
-    // but never snapping immediately to end unless we need to reset.
     if (isFinal && charDiff > 1000) {
-      setDisplayedText(text); // only snap to end if absurdly behind
+      setDisplayedText(text);
       return;
     }
 
     const timer = setTimeout(() => {
       setDisplayedText(prev => text.substring(0, prev.length + (charDiff > 25 ? 2 : 1)));
-    }, 35); // Slower, more readable animation
+    }, 35);
 
     return () => clearTimeout(timer);
   }, [text, displayedText, isFinal, isNew]);
@@ -97,7 +95,9 @@ function TypewriterMessage({ text, isFinal, isNew }: { text: string; isFinal: bo
       <span />
     </div>
   ) : (
-    <p>{displayedText}</p>
+    <div className="markdown-content">
+      <ReactMarkdown>{displayedText}</ReactMarkdown>
+    </div>
   );
 }
 
@@ -110,7 +110,6 @@ export default function ChatClient({ personaId }: ChatClientProps) {
   const [draft, setDraft] = useState("");
   const [isHydrated, setIsHydrated] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
-  const [customPrompts, setCustomPrompts] = useState<string[]>([]);
   const endRef = useRef<HTMLDivElement | null>(null);
   const composerRef = useRef<HTMLTextAreaElement | null>(null);
 
@@ -123,12 +122,6 @@ export default function ChatClient({ personaId }: ChatClientProps) {
     setActiveThreadId(initialThread);
     setMessages(loadMessages(personaId, initialThread));
     
-    // Load custom prompts
-    try {
-      const cached = JSON.parse(window.localStorage.getItem(`personafy.prompts.${personaId}`) || "[]");
-      setCustomPrompts(cached);
-    } catch(e) { }
-
     setDraft("");
     setIsHydrated(true);
     setIsThinking(false);
@@ -162,7 +155,6 @@ export default function ChatClient({ personaId }: ChatClientProps) {
     if (!isHydrated) return;
     window.localStorage.setItem(storageKeyFor(personaId, activeThreadId), JSON.stringify(messages));
     
-    // Update thread title and date on first message
     if (messages.length > 0) {
       setThreads(currentThreads => {
         const updated = currentThreads.map(t => {
@@ -190,8 +182,6 @@ export default function ChatClient({ personaId }: ChatClientProps) {
     const text = (override ?? draft).trim();
     if (!text || isThinking) return;
 
-    console.log("[FRONTEND] 🚀 User message:", text.slice(0, 100));
-
     const userMessage: Message = { id: createId(), sender: "user", text };
     setMessages((current) => [...current, userMessage]);
     setDraft("");
@@ -201,8 +191,6 @@ export default function ChatClient({ personaId }: ChatClientProps) {
     setMessages((current) => [...current, { id: assistantId, sender: "assistant", text: "", isNew: true }]);
 
     try {
-      console.log("[FRONTEND] 📤 Sending request to /api/chat with persona:", personaId);
-      
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -210,15 +198,11 @@ export default function ChatClient({ personaId }: ChatClientProps) {
       });
 
       if (!response.body) throw new Error("No response body");
-      
-      console.log("[FRONTEND] ✅ Connection established, receiving stream...");
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder("utf-8");
       
       let done = false;
-      let chunkCount = 0;
-      let totalCharsReceived = 0;
       
       while (!done) {
         const { value, done: readerDone } = await reader.read();
@@ -229,24 +213,16 @@ export default function ChatClient({ personaId }: ChatClientProps) {
           for (const line of lines) {
             if (line.startsWith("data: ")) {
               const dataText = line.substring(6);
-              if (dataText === "[DONE]") {
-                console.log("[FRONTEND] ✅ Stream complete! Total chunks:", chunkCount, "Total chars:", totalCharsReceived);
-                break;
-              }
+              if (dataText === "[DONE]") break;
               try {
                 const data = JSON.parse(dataText);
                 if (data.text) {
-                  chunkCount++;
-                  totalCharsReceived += data.text.length;
-                  console.log(`[FRONTEND] 📦 Chunk ${chunkCount}: ${data.text.length} chars`);
-                  
                   setMessages((current) =>
                     current.map((msg) =>
                       msg.id === assistantId ? { ...msg, text: msg.text + data.text } : msg
                     )
                   );
                 } else if (data.error) {
-                  console.error("[FRONTEND] ❌ Stream error:", data.error);
                   setMessages((current) =>
                     current.map((msg) =>
                       msg.id === assistantId ? { ...msg, text: msg.text + `\n\nError: ${data.error}` } : msg
@@ -254,14 +230,13 @@ export default function ChatClient({ personaId }: ChatClientProps) {
                   );
                 }
               } catch (e) {
-                console.warn("[FRONTEND] ⚠️ Failed to parse chunk:", e);
+                console.warn("Failed to parse chunk:", e);
               }
             }
           }
         }
       }
       
-      // Remove isNew flag when done so on reload it won't animate
       setMessages((current) =>
         current.map((msg) =>
           msg.id === assistantId ? { ...msg, isNew: false } : msg
@@ -269,7 +244,6 @@ export default function ChatClient({ personaId }: ChatClientProps) {
       );
 
     } catch (error: any) {
-      console.error("[FRONTEND] ❌ Network error:", error?.message);
       setMessages((current) =>
         current.map((msg) =>
           msg.id === assistantId ? { ...msg, text: `Network error: ${error?.message || String(error)}` } : msg
@@ -301,7 +275,7 @@ export default function ChatClient({ personaId }: ChatClientProps) {
   return (
     <section className="chat-shell">
       <aside className="chat-profile-panel glass-card">
-        <div className="profile-orb" style={{ background: persona.glow }} />
+        <img src="/paw-print.svg" alt="" className="floating-decor decor-two" style={{ top: '20px', left: '10px', width: '30px' }} />
         <p className="eyebrow">Persona</p>
         <h1>{persona.name}</h1>
         <p className="profile-title">{persona.title}</p>
@@ -328,22 +302,30 @@ export default function ChatClient({ personaId }: ChatClientProps) {
 
         <div className="threads-list" style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Conversations</span>
+            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--muted-strong)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Conversations</span>
             <button 
               type="button" 
               onClick={createNewThread} 
               style={{
-                background: 'transparent',
-                border: '1px solid rgba(255,255,255,0.2)',
-                color: 'var(--text-secondary)',
-                borderRadius: '50px',
-                padding: '2px 8px',
-                fontSize: '0.75rem',
+                background: 'var(--accent-soft)',
+                border: '2px solid var(--accent-bright)',
+                color: 'var(--accent-bright)',
+                borderRadius: '8px',
+                padding: '6px 12px',
+                fontSize: '0.85rem',
+                fontWeight: 'bold',
                 cursor: 'pointer',
-                transition: 'all 0.2sease'
+                transition: 'all 0.2s ease',
+                boxShadow: '2px 2px 0px var(--accent-bright)'
               }}
-              onMouseEnter={(e) => e.currentTarget.style.color = '#fff'}
-              onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translate(-2px, -2px)';
+                e.currentTarget.style.boxShadow = '4px 4px 0px var(--accent-bright)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translate(0px, 0px)';
+                e.currentTarget.style.boxShadow = '2px 2px 0px var(--accent-bright)';
+              }}
             >
               + New
             </button>
@@ -359,21 +341,36 @@ export default function ChatClient({ personaId }: ChatClientProps) {
                 }}
                 style={{ 
                   textAlign: 'left', 
-                  padding: '8px 12px', 
-                  borderRadius: '12px', 
-                  background: t.id === activeThreadId ? 'rgba(255,255,255,0.08)' : 'transparent',
-                  border: t.id === activeThreadId ? `1px solid ${persona.accent}40` : '1px solid transparent',
-                  color: t.id === activeThreadId ? '#fff' : 'var(--text-secondary)',
+                  padding: '10px 14px', 
+                  borderRadius: '8px', 
+                  background: t.id === activeThreadId ? 'var(--surface)' : 'transparent',
+                  border: t.id === activeThreadId ? `2px solid var(--accent-bright)` : '2px solid transparent',
+                  color: t.id === activeThreadId ? 'var(--foreground)' : 'var(--muted-strong)',
+                  fontWeight: t.id === activeThreadId ? 'bold' : 'normal',
                   cursor: 'pointer',
-                  fontSize: '0.9rem',
+                  fontSize: '0.95rem',
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   transition: 'all 0.2s ease',
-                  boxShadow: t.id === activeThreadId ? `0 0 10px ${persona.accent}15` : 'none'
+                  boxShadow: t.id === activeThreadId ? '2px 2px 0px var(--accent-bright)' : 'none'
                 }}
-                onMouseEnter={(e) => { if(t.id !== activeThreadId) e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; }}
-                onMouseLeave={(e) => { if(t.id !== activeThreadId) e.currentTarget.style.background = 'transparent'; }}
+                onMouseEnter={(e) => { 
+                  if(t.id !== activeThreadId) {
+                    e.currentTarget.style.background = 'var(--accent-soft)';
+                    e.currentTarget.style.border = '2px solid var(--accent-bright)';
+                    e.currentTarget.style.transform = 'translate(-2px, -2px)';
+                    e.currentTarget.style.boxShadow = '2px 2px 0px var(--accent-bright)';
+                  }
+                }}
+                onMouseLeave={(e) => { 
+                  if(t.id !== activeThreadId) {
+                    e.currentTarget.style.background = 'transparent';
+                    e.currentTarget.style.border = '2px solid transparent';
+                    e.currentTarget.style.transform = 'translate(0px, 0px)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }
+                }}
               >
                 {t.title || "Empty Thread"}
               </button>
@@ -381,7 +378,7 @@ export default function ChatClient({ personaId }: ChatClientProps) {
           </div>
         </div>
 
-        <button type="button" className="secondary-btn" onClick={resetHistory} style={{ marginTop: '20px' }}>
+        <button type="button" className="secondary-btn" onClick={resetHistory} style={{ marginTop: '20px', width: '100%' }}>
           Clear current history
         </button>
       </aside>
@@ -393,7 +390,7 @@ export default function ChatClient({ personaId }: ChatClientProps) {
             <h3>Start with one of these.</h3>
             <div className="chat-status" style={{ marginTop: '10px' }}>
               <span className="status-dot" style={{ background: persona.accent }} />
-              <span>{isThinking ? "Generating reply" : "Ready"}</span>
+              <span>{isThinking ? "Thinking... " : "Ready"}</span>
             </div>
           </div>
           <div className="prompt-chip-grid">
@@ -410,13 +407,13 @@ export default function ChatClient({ personaId }: ChatClientProps) {
             <div className="empty-thread">
               <div className="empty-thread-badge">New thread</div>
               <h3>No messages yet.</h3>
-              <p>Select a prompt or type your own.</p>
+              <p>Select a prompt or type your message.</p>
             </div>
           ) : (
             messages.map((message) => (
               <article key={message.id} className={`message-bubble ${message.sender}`}>
                 <div className="message-meta">{message.sender === "user" ? "You" : persona.name}</div>
-                {message.sender === "assistant" ? <TypewriterMessage text={message.text} isFinal={!isThinking} isNew={message.isNew} /> : <p>{message.text}</p>}
+                {message.sender === "assistant" ? <TypewriterMessage text={message.text} isFinal={!isThinking} isNew={message.isNew} /> : <div className="markdown-content"><ReactMarkdown>{message.text}</ReactMarkdown></div>}
               </article>
             ))
           )}
@@ -438,13 +435,13 @@ export default function ChatClient({ personaId }: ChatClientProps) {
                 void sendMessage();
               }
             }}
-            placeholder={`Ask ${persona.name} something specific...`}
+            placeholder={`Ask ${persona.name} a question...`}
             rows={1}
           />
           <div className="composer-actions">
-            <span className="composer-hint">Enter to send, Shift+Enter for a line.</span>
+            <span className="composer-hint">Enter to send, Shift+Enter for a new line.</span>
             <button type="button" className="primary-btn" onClick={() => sendMessage()} disabled={!draft.trim() || isThinking}>
-              Send message
+              Send
             </button>
           </div>
         </footer>

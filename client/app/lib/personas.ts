@@ -19,8 +19,8 @@ export const personas: PersonaProfile[] = [
     title: "Direct, disciplined, execution-first",
     tagline: "Sharp, direct guidance.",
     description: "Direct, practical, and no-nonsense.",
-    accent: "#4cc9f0",
-    glow: "rgba(76, 201, 240, 0.35)",
+    accent: "#FF1493",
+    glow: "rgba(255, 20, 147, 0.35)",
     prompts: [
       "Fix my DSA routine.",
       "Give me a 7-day comeback plan.",
@@ -36,8 +36,8 @@ export const personas: PersonaProfile[] = [
     title: "Structured, calm, analytical",
     tagline: "Calm, structured guidance.",
     description: "Calm, analytical, and structured.",
-    accent: "#f97316",
-    glow: "rgba(249, 115, 22, 0.32)",
+    accent: "#FF69B4",
+    glow: "rgba(255, 105, 180, 0.32)",
     prompts: [
       "Build an interview prep roadmap.",
       "How do I revise without forgetting?",
@@ -53,8 +53,8 @@ export const personas: PersonaProfile[] = [
     title: "Friendly, simple, intuitive",
     tagline: "Friendly, simple teaching.",
     description: "Energetic and relatable.",
-    accent: "#34d399",
-    glow: "rgba(52, 211, 153, 0.33)",
+    accent: "#FFB6C1",
+    glow: "rgba(255, 182, 193, 0.33)",
     prompts: [
       "Explain recursion simply.",
       "Make graphs intuitive.",
